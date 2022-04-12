@@ -5,25 +5,28 @@ version = "0.1.0+4.0.0"
 edition = "2021"
 
 [features]
-default = ["hyper/http1", "tls"]
+default = ["hyper/http1", "tls", "chrono"]
 tls = ["hyper-tls"]
+chrono = ["dep:chrono"]
 http2 = ["hyper/http2", "tls"]
 
 [dependencies]
 serde_json = "1.0.79"
 thiserror = "1.0.30"
+hyper-tls = { version = "0.5.0", optional = true }
 
 [dependencies.hyper]
 version = "0.14.18"
 features = ["client", "tcp"]
 
-[dependencies.hyper-tls]
-version = "0.5.0"
-optional = true
-
 [dependencies.serde]
 version = "1.0.136"
 features = ["derive"]
+
+[dependencies.chrono]
+version = "0.4.19"
+optional = true
+features = ["serde"]
 
 [dev-dependencies.tokio]
 version = "1.17.0"

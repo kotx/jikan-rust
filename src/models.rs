@@ -20,6 +20,8 @@ pub mod anime {
 
     use serde::{Deserialize, Serialize};
 
+    use self::time::Aired;
+
     #[derive(Debug, Serialize, Deserialize)]
     pub struct Anime {
         pub mal_id: i64,
@@ -58,26 +60,36 @@ pub mod anime {
         pub themes: Vec<Genre>,
         pub demographics: Vec<Option<serde_json::Value>>,
     }
+    #[cfg(not(feature = "chrono"))]
+    pub mod time {
+        #[derive(Debug, Serialize, Deserialize)]
+        pub struct Aired {
+            pub from: Option<String>,
+            pub to: Option<String>,
+            pub prop: Prop,
+            pub string: String,
+        }
 
-    #[derive(Debug, Serialize, Deserialize)]
-    pub struct Aired {
-        pub from: String,
-        pub to: Option<String>,
-        pub prop: Prop,
-        pub string: String,
-    }
+        #[derive(Debug, Serialize, Deserialize)]
+        pub struct Prop {
+            pub from: From,
+            pub to: From,
+        }
 
-    #[derive(Debug, Serialize, Deserialize)]
-    pub struct Prop {
-        pub from: From,
-        pub to: From,
-    }
+        #[derive(Debug, Serialize, Deserialize)]
+        pub struct From {
+            pub day: Option<i64>,
+            pub month: Option<i64>,
+            pub year: Option<i64>,
+        }
 
-    #[derive(Debug, Serialize, Deserialize)]
-    pub struct From {
-        pub day: Option<i64>,
-        pub month: Option<i64>,
-        pub year: Option<i64>,
+        // #[derive(Debug, Serialize, Deserialize)]
+        // pub struct Broadcast {
+        //     pub day: Option<String>,
+        //     pub time: Option<String>,
+        //     pub timezone: Option<String>,
+        //     pub string: Option<String>,
+        // }
     }
 
     #[derive(Debug, Serialize, Deserialize)]
@@ -88,11 +100,31 @@ pub mod anime {
         pub string: Option<String>,
     }
 
+    #[cfg(feature = "chrono")]
+    pub mod time {
+        use chrono::Utc;
+        use serde::{Deserialize, Serialize};
+
+        #[derive(Debug, Serialize, Deserialize)]
+        pub struct Aired {
+            from: Option<chrono::DateTime<Utc>>,
+            to: Option<chrono::DateTime<Utc>>,
+        }
+
+        // #[derive(Debug, Serialize, Deserialize)]
+        // pub struct Broadcast {
+        //     pub day: Option<String>,
+        //     pub time: Option<chrono::NaiveTime>,
+        //     pub timezone: Option<String>,
+        //     pub string: Option<String>,
+        // }
+    }
+
     #[derive(Debug, Serialize, Deserialize)]
     pub struct Genre {
         pub mal_id: i64,
         #[serde(rename = "type")]
-        pub genre_type: GenreType,
+        pub genre_type: Type,
         pub name: String,
         pub url: String,
     }
@@ -122,7 +154,7 @@ pub mod anime {
     }
 
     #[derive(Debug, Serialize, Deserialize)]
-    pub enum GenreType {
+    pub enum Type {
         #[serde(rename = "anime")]
         Anime,
     }
