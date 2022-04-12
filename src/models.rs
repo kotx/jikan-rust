@@ -1,8 +1,18 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct JikanResponse<T> {
-    pub data: T,
+#[serde(untagged)]
+pub enum JikanResponse<T> {
+    Success {
+        data: T,
+    },
+    Error {
+        status: u32,
+        #[serde(rename = "type")]
+        error_type: String,
+        message: String,
+        error: String,
+    },
 }
 
 pub mod anime {
@@ -19,7 +29,7 @@ pub mod anime {
         pub title: String,
         pub title_english: String,
         pub title_japanese: String,
-        pub title_synonyms: Vec<Option<serde_json::Value>>,
+        pub title_synonyms: Vec<String>,
         #[serde(rename = "type")]
         pub data_type: String,
         pub source: String,
@@ -36,9 +46,9 @@ pub mod anime {
         pub members: i64,
         pub favorites: i64,
         pub synopsis: String,
-        pub background: String,
-        pub season: String,
-        pub year: i64,
+        pub background: Option<String>,
+        pub season: Option<String>,
+        pub year: Option<i64>,
         pub broadcast: Broadcast,
         pub producers: Vec<Genre>,
         pub licensors: Vec<Genre>,
@@ -52,7 +62,7 @@ pub mod anime {
     #[derive(Debug, Serialize, Deserialize)]
     pub struct Aired {
         pub from: String,
-        pub to: String,
+        pub to: Option<String>,
         pub prop: Prop,
         pub string: String,
     }
@@ -65,24 +75,24 @@ pub mod anime {
 
     #[derive(Debug, Serialize, Deserialize)]
     pub struct From {
-        pub day: i64,
-        pub month: i64,
-        pub year: i64,
+        pub day: Option<i64>,
+        pub month: Option<i64>,
+        pub year: Option<i64>,
     }
 
     #[derive(Debug, Serialize, Deserialize)]
     pub struct Broadcast {
-        pub day: String,
-        pub time: String,
-        pub timezone: String,
-        pub string: String,
+        pub day: Option<String>,
+        pub time: Option<String>,
+        pub timezone: Option<String>,
+        pub string: Option<String>,
     }
 
     #[derive(Debug, Serialize, Deserialize)]
     pub struct Genre {
         pub mal_id: i64,
         #[serde(rename = "type")]
-        pub genre_type: String,
+        pub genre_type: GenreType,
         pub name: String,
         pub url: String,
     }
@@ -109,5 +119,11 @@ pub mod anime {
         pub medium_image_url: String,
         pub large_image_url: String,
         pub maximum_image_url: String,
+    }
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub enum GenreType {
+        #[serde(rename = "anime")]
+        Anime,
     }
 }

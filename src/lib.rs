@@ -87,29 +87,27 @@ impl<C: hyper::client::connect::Connect + Clone + Send + Sync + 'static> JikanCl
         )?)
     }
 
-    pub async fn get_anime_by_id(self, id: u32) -> JikanResult<Anime> {
+    pub async fn get_anime_by_id(self, id: u32) -> JikanResult<JikanResponse<Anime>> {
         let res = self
             .http_client
             .get((self.api_url + &format!("/anime/{id}")).parse().unwrap())
             .await?;
 
-        return Ok(
-            JikanClient::<C>::parse_json_response::<JikanResponse<Anime>>(res)
-                .await?
-                .data,
-        );
+        return Ok(JikanClient::<C>::parse_json_response::<JikanResponse<Anime>>(res).await?);
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::JikanClient;
+    use crate::{models::JikanResponse, JikanClient};
 
     #[tokio::test]
     async fn cowboy_bebop() {
         let client = JikanClient::default();
-        let anime = client.get_anime_by_id(1).await.unwrap();
-        assert_eq!(anime.title, "Cowboy Bebop");
-        assert_eq!(anime.year, 1998);
+        let response = client.get_anime_by_id(1).await.unwrap();
+        if let JikanResponse::Success { data: anime } = response {
+            assert_eq!(anime.title, "Cowboy Bebop");
+            assert_eq!(anime.year, Some(1998));
+        }
     }
 }
