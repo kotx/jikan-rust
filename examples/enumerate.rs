@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{path::Path, time::Duration};
 
 use jikan::{models::JikanAPIError, JikanClient, JikanError, JikanResult};
 use tracing_subscriber::FmtSubscriber;
@@ -36,8 +36,15 @@ async fn main() -> JikanResult<()> {
     }
 
     loop {
-        let client = JikanClient::default()
-            .with_api_url(std::env::var("JIKAN_API_URL").unwrap_or(jikan::DEFAULT_API_URL.into()));
+        let url = std::env::var("JIKAN_API_URL").unwrap_or(jikan::DEFAULT_API_URL.into());
+
+        let client = JikanClient::default().with_api_url(&url);
+
+        let delay = if url.to_ascii_lowercase() == "https://api.jikan.moe/v4" {
+            Duration::from_secs(4)
+        } else {
+            Duration::ZERO
+        };
 
         println!("Fetching {id}");
         let anime = client.get_anime_by_id(id).await;
@@ -57,6 +64,10 @@ async fn main() -> JikanResult<()> {
                 println!("{id}: 404");
             }
             Err(err) => Result::Err(err).unwrap(),
+        }
+        if !delay.is_zero() {
+            println!("Waiting for {:?}...", delay);
+            tokio::time::sleep(delay).await;
         }
         id += 1;
     }
