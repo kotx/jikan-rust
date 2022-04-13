@@ -5,15 +5,13 @@ pub use hyper;
 pub use hyper_tls;
 
 pub mod models;
-mod request;
 
 use hyper::{
     client::{HttpConnector, ResponseFuture},
     header::HeaderValue,
-    Body, Response,
+    Body, Method, Response,
 };
 use models::{anime::Anime, JikanAPIError, JikanResponse};
-use request::Request;
 use thiserror::Error;
 
 #[cfg(feature = "tls")]
@@ -92,10 +90,10 @@ impl Default for JikanClient<HttpConnector> {
 }
 
 impl<C: hyper::client::connect::Connect + Clone + Send + Sync + 'static> JikanClient<C> {
-    fn try_request(self, request: Request) -> Result<ResponseFuture, JikanError> {
+    fn try_request(self, path: String) -> Result<ResponseFuture, JikanError> {
         let mut builder = hyper::Request::builder()
-            .method(request.method)
-            .uri(format!("{}/{}", self.api_url, request.path));
+            .method(Method::GET) // Jikan only supports (readonly) GET requests
+            .uri(format!("{}/{}", self.api_url, path));
 
         if let Some(headers) = builder.headers_mut() {
             headers.insert(
@@ -108,22 +106,9 @@ impl<C: hyper::client::connect::Connect + Clone + Send + Sync + 'static> JikanCl
                     ")"
                 )),
             );
-
-            if let Some(req_headers) = request.headers {
-                for (maybe_name, value) in req_headers {
-                    if let Some(name) = maybe_name {
-                        headers.insert(name, value);
-                    }
-                }
-            }
         }
 
-        let req_final = if let Some(bytes) = request.body {
-            builder.body(Body::from(bytes)).unwrap() // TODO: don't unwrap
-        } else {
-            builder.body(Body::empty()).unwrap()
-        };
-
+        let req_final = builder.body(Body::empty()).unwrap();
         Ok(self.http_client.request(req_final))
     }
 
@@ -147,14 +132,7 @@ impl<C: hyper::client::connect::Connect + Clone + Send + Sync + 'static> JikanCl
     }
 
     pub async fn get_anime_by_id(self, id: u32) -> JikanResult<Anime> {
-        let res = self
-            .try_request(
-                Request::builder()
-                    .path(format!("anime/{}", id))
-                    .build()
-                    .unwrap(),
-            )?
-            .await?;
+        let res = self.try_request(format!("anime/{}", id))?.await?;
 
         return Ok(
             JikanClient::<C>::parse_json_response::<JikanResponse<Anime>>(res)
