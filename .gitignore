@@ -1,2 +1,5 @@
 /target
 /Cargo.lock
+
+# Files generated from examples
+/anime

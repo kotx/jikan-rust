@@ -5,9 +5,15 @@ pub use hyper;
 pub use hyper_tls;
 
 pub mod models;
+mod request;
 
-use hyper::{body::Buf, client::HttpConnector, Body, Response};
-use models::{anime::Anime, JikanResponse};
+use hyper::{
+    client::{HttpConnector, ResponseFuture},
+    header::HeaderValue,
+    Body, Response,
+};
+use models::{anime::Anime, JikanAPIError, JikanResponse};
+use request::Request;
 use thiserror::Error;
 
 #[cfg(feature = "tls")]
@@ -25,7 +31,10 @@ pub enum JikanError {
     #[error("http error")]
     Http(#[from] hyper::Error),
 
-    #[error("unknown jikan error")]
+    #[error("jikan api error")]
+    API(JikanAPIError),
+
+    #[error("unknown error")]
     Unknown,
 }
 
@@ -79,33 +88,90 @@ impl Default for JikanClient<HttpConnector> {
 }
 
 impl<C: hyper::client::connect::Connect + Clone + Send + Sync + 'static> JikanClient<C> {
+    fn try_request(self, request: Request) -> Result<ResponseFuture, JikanError> {
+        let mut builder = hyper::Request::builder()
+            .method(request.method)
+            .uri(format!("{}/{}", self.api_url, request.path));
+
+        if let Some(headers) = builder.headers_mut() {
+            headers.insert(
+                hyper::header::USER_AGENT,
+                HeaderValue::from_static(concat!(
+                    "jikan-rust (",
+                    env!("CARGO_PKG_HOMEPAGE"),
+                    ", ",
+                    env!("CARGO_PKG_VERSION"),
+                    ")"
+                )),
+            );
+
+            if let Some(req_headers) = request.headers {
+                for (maybe_name, value) in req_headers {
+                    if let Some(name) = maybe_name {
+                        headers.insert(name, value);
+                    }
+                }
+            }
+        }
+
+        let req_final = if let Some(bytes) = request.body {
+            builder.body(Body::from(bytes)).unwrap() // TODO: don't unwrap
+        } else {
+            builder.body(Body::empty()).unwrap()
+        };
+
+        Ok(self.http_client.request(req_final))
+    }
+
     async fn parse_json_response<T: for<'de> serde::Deserialize<'de>>(
         mut res: Response<Body>,
     ) -> JikanResult<T> {
-        Ok(serde_json::from_reader::<_, T>(
-            hyper::body::aggregate(res.body_mut()).await?.reader(),
-        )?)
+        let body = hyper::body::to_bytes(res.body_mut()).await?;
+        let body_str = std::str::from_utf8(&body).unwrap();
+
+        let status = res.status();
+
+        if status.is_success() {
+            #[cfg(feature = "tracing")]
+            tracing::trace!("Successful response body: {body_str:?}");
+            return Ok(serde_json::from_str(body_str)?);
+        } else {
+            #[cfg(feature = "tracing")]
+            tracing::debug!("Unsuccessful response ({status}): {body_str:#?}");
+            return Err(JikanError::API(serde_json::from_str(body_str)?));
+        };
     }
 
-    pub async fn get_anime_by_id(self, id: u32) -> JikanResult<JikanResponse<Anime>> {
+    pub async fn get_anime_by_id(self, id: u32) -> JikanResult<Anime> {
         let res = self
-            .http_client
-            .get((self.api_url + &format!("/anime/{id}")).parse().unwrap())
+            .try_request(
+                Request::builder()
+                    .path(format!("anime/{}", id))
+                    .build()
+                    .unwrap(),
+            )?
             .await?;
 
-        return Ok(JikanClient::<C>::parse_json_response::<JikanResponse<Anime>>(res).await?);
+        return Ok(
+            JikanClient::<C>::parse_json_response::<JikanResponse<Anime>>(res)
+                .await?
+                .data,
+        );
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{models::JikanResponse, JikanClient};
+    use crate::JikanClient;
+    use tokio_test::assert_ok;
 
     #[tokio::test]
     async fn cowboy_bebop() {
         let client = JikanClient::default();
-        let response = client.get_anime_by_id(1).await.unwrap();
-        if let JikanResponse::Success { data: anime } = response {
+        let response = client.get_anime_by_id(1).await;
+        assert_ok!(&response);
+
+        if let Ok(anime) = response {
             assert_eq!(anime.title, "Cowboy Bebop");
             assert_eq!(anime.year, Some(1998));
         }

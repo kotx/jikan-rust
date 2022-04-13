@@ -5,15 +5,17 @@ version = "0.1.0+4.0.0"
 edition = "2021"
 
 [features]
-default = ["hyper/http1", "tls", "chrono"]
+default = ["hyper/http1", "tls", "chrono", "tracing"]
 tls = ["hyper-tls"]
 chrono = ["dep:chrono"]
 http2 = ["hyper/http2", "tls"]
+tracing = ["dep:tracing"]
 
 [dependencies]
 serde_json = "1.0.79"
 thiserror = "1.0.30"
 hyper-tls = { version = "0.5.0", optional = true }
+tracing = { version = "0.1.33", optional = true }
 
 [dependencies.hyper]
 version = "0.14.18"
@@ -28,6 +30,12 @@ version = "0.4.19"
 optional = true
 features = ["serde"]
 
+[dev-dependencies]
+tracing-subscriber = "0.2.0"
+
 [dev-dependencies.tokio]
 version = "1.17.0"
 features = ["full"]
+
+[dev-dependencies.tokio-test]
+version = "0.4.2"
