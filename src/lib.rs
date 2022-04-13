@@ -46,8 +46,8 @@ pub type DefaultConnector = HttpConnector;
 
 #[derive(Clone)]
 pub struct JikanClient<C = DefaultConnector> {
-    pub api_url: String,
-    pub http_client: hyper::Client<C>,
+    api_url: String,
+    http_client: hyper::Client<C>,
 }
 
 impl<C> JikanClient<C> {
@@ -56,6 +56,10 @@ impl<C> JikanClient<C> {
             api_url: api_url.into(),
             http_client,
         }
+    }
+
+    pub fn api_url(self) -> String {
+        self.api_url
     }
 
     pub fn with_http_client(mut self, http_client: hyper::Client<C>) -> Self {
