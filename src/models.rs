@@ -59,6 +59,8 @@ pub mod anime {
 
     #[cfg(not(feature = "chrono"))]
     pub mod time {
+        use serde::{Deserialize, Serialize};
+
         #[derive(Debug, Serialize, Deserialize)]
         pub struct Aired {
             pub from: Option<String>,
