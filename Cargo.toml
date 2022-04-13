@@ -5,9 +5,10 @@ version = "0.1.0+4.0.0"
 edition = "2021"
 
 [features]
-default = ["hyper/http1", "tls", "chrono", "tracing"]
+default = ["http1", "tls", "chrono", "tracing"]
 tls = ["hyper-tls"]
 chrono = ["dep:chrono"]
+http1 = ["hyper/http1"]
 http2 = ["hyper/http2", "tls"]
 tracing = ["dep:tracing"]
 
