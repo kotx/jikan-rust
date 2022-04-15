@@ -156,4 +156,57 @@ pub mod anime {
         #[serde(rename = "fall")]
         Fall,
     }
+
+    pub type Characters = Vec<Character>;
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct Character {
+        pub character: CharacterDetails,
+        pub role: String,
+        pub voice_actors: Vec<VoiceActor>,
+    }
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct CharacterDetails {
+        pub mal_id: u32,
+        pub url: String,
+        pub images: CharacterImages,
+        pub name: String,
+    }
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct CharacterImages {
+        pub jpg: CharacterImage,
+        pub webp: CharacterImage,
+    }
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct CharacterImage {
+        pub image_url: Option<String>,
+        pub small_image_url: Option<String>,
+    }
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct VoiceActor {
+        person: Person,
+        language: String,
+    }
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct Person {
+        mal_id: u32,
+        url: String,
+        images: PersonImages,
+        name: String,
+    }
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct PersonImages {
+        jpg: PersonImage,
+    }
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct PersonImage {
+        image_url: Option<String>,
+    }
 }

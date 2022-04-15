@@ -13,6 +13,7 @@ async fn main() -> JikanResult<()> {
     );
 
     println!("{:#?}", client.get_anime_by_id(id).await?);
+    println!("{:#?}", client.get_anime_characters(id).await?);
 
     Ok(())
 }

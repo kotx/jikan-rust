@@ -143,6 +143,18 @@ impl<C: hyper::client::connect::Connect + Clone + Send + Sync + 'static> JikanCl
                 .data,
         );
     }
+
+    pub async fn get_anime_characters(&self, id: u32) -> JikanResult<Characters> {
+        let res = self
+            .try_request(format!("anime/{}/characters", id))?
+            .await?;
+
+        return Ok(
+            JikanClient::<C>::parse_json_response::<JikanResponse<Characters>>(res)
+                .await?
+                .data,
+        );
+    }
 }
 
 #[cfg(test)]
@@ -155,10 +167,15 @@ mod tests {
         let client = JikanClient::default();
         let response = client.get_anime_by_id(1).await;
         assert_ok!(&response);
+        let anime = response.unwrap();
 
-        if let Ok(anime) = response {
-            assert_eq!(anime.title, "Cowboy Bebop");
-            assert_eq!(anime.year, Some(1998));
-        }
+        assert_eq!(anime.title, "Cowboy Bebop");
+        assert_eq!(anime.year, Some(1998));
+
+        let response = client.get_anime_characters(1).await;
+        assert_ok!(&response);
+        let characters = response.unwrap();
+
+        assert_eq!(characters.len(), 125);
     }
 }
