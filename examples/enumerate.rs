@@ -15,18 +15,16 @@ async fn main() -> JikanResult<()> {
 
     let path = Path::new("anime");
     if path.is_dir() {
-        for entry in path.read_dir().unwrap() {
-            if let Ok(item) = entry {
-                let item_id: u32 = item
-                    .file_name()
-                    .to_string_lossy()
-                    .trim_end_matches(".json")
-                    .parse()
-                    .unwrap();
+        for entry in path.read_dir().unwrap().flatten() {
+            let item_id: u32 = entry
+                .file_name()
+                .to_string_lossy()
+                .trim_end_matches(".json")
+                .parse()
+                .unwrap();
 
-                if item_id > id {
-                    id = item_id;
-                }
+            if item_id > id {
+                id = item_id;
             }
         }
     }
@@ -36,7 +34,7 @@ async fn main() -> JikanResult<()> {
     }
 
     loop {
-        let url = std::env::var("JIKAN_API_URL").unwrap_or(jikan::DEFAULT_API_URL.into());
+        let url = std::env::var("JIKAN_API_URL").unwrap_or_else(|_| jikan::DEFAULT_API_URL.into());
 
         let client = JikanClient::default().with_api_url(&url);
 

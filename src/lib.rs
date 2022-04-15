@@ -123,12 +123,12 @@ impl<C: hyper::client::connect::Connect + Clone + Send + Sync + 'static> JikanCl
         if status.is_success() {
             #[cfg(feature = "tracing")]
             tracing::trace!("Successful response body: {body_str:?}");
-            return Ok(serde_json::from_str(body_str)?);
+            Ok(serde_json::from_str(body_str)?)
         } else {
             #[cfg(feature = "tracing")]
             tracing::debug!("Unsuccessful response ({status}): {body_str:#?}");
-            return Err(JikanError::API(serde_json::from_str(body_str)?));
-        };
+            Err(JikanError::API(serde_json::from_str(body_str)?))
+        }
     }
 
     pub async fn get_anime_by_id(self, id: u32) -> JikanResult<Anime> {
