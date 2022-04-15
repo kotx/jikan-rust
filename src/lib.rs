@@ -11,7 +11,10 @@ use hyper::{
     header::HeaderValue,
     Body, Method, Response,
 };
-use models::{anime::Anime, JikanAPIError, JikanResponse};
+use models::{
+    anime::{Anime, Characters},
+    JikanAPIError, JikanResponse,
+};
 use thiserror::Error;
 
 #[cfg(feature = "tls")]
@@ -90,7 +93,7 @@ impl Default for JikanClient<HttpConnector> {
 }
 
 impl<C: hyper::client::connect::Connect + Clone + Send + Sync + 'static> JikanClient<C> {
-    fn try_request(self, path: String) -> Result<ResponseFuture, JikanError> {
+    fn try_request(&self, path: String) -> Result<ResponseFuture, JikanError> {
         let mut builder = hyper::Request::builder()
             .method(Method::GET) // Jikan only supports (readonly) GET requests
             .uri(format!("{}/{}", self.api_url, path));
@@ -131,7 +134,7 @@ impl<C: hyper::client::connect::Connect + Clone + Send + Sync + 'static> JikanCl
         }
     }
 
-    pub async fn get_anime_by_id(self, id: u32) -> JikanResult<Anime> {
+    pub async fn get_anime_by_id(&self, id: u32) -> JikanResult<Anime> {
         let res = self.try_request(format!("anime/{}", id))?.await?;
 
         return Ok(
