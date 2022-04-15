@@ -2,6 +2,8 @@
 name = "jikan"
 description = "A REST API client for Jikan.moe"
 version = "0.1.0+4.0.0"
+homepage = "https://github.com/kotx/jikan-rust"
+repository = "https://github.com/kotx/jikan-rust.git"
 edition = "2021"
 
 [features]
